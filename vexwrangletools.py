@@ -67,9 +67,6 @@ def literalsToParms(nodes):
             elif entry.name() not in varnames:
                 tempGroup.remove(entry)
 
-        if not declarations:
-            break
-
         for decl in declarations:
             linenum, vartype, varname, varvalue = decl
             if not varvalue:
