@@ -77,32 +77,46 @@ def literalsToParms(nodes):
             
             template = None
             numComps = None
+            function = None
 
             if vartype == 'float':
                 template = hou.FloatParmTemplate(varname, varname, 1)
                 parm_type = template.type()
                 numComps = 1
+                function = 'chf'
             if vartype == 'int':
                 template = hou.IntParmTemplate(varname, varname, 1)
                 parm_type = template.type()
                 numComps = 1
+                function = 'ch'
             elif vartype == 'vector':
                 template = hou.FloatParmTemplate(varname, varname, 3)
                 parm_type = template.type()
                 numComps = 3
+                function = 'chv'
             elif vartype == 'vector4':
                 template = hou.FloatParmTemplate(varname, varname, 4)
                 parm_type = template.type()
                 numComps = 4
+                function = 'chv'
+            elif vartype == 'string':
+                template = hou.StringParmTemplate(varname, varname, 1)
+                parm_type = template.type()
+                numComps = 1
+                function = 'chs'
 
             if parm_type == hou.parmTemplateType.Float:
                 valtype = float
             else:
                 valtype = int
-
-            g = re.match(r"[\{\s]*([0-9\.\ f\,]*).*", varvalue).groups()[0]
-            varvalue  = [valtype(comp) for comp in g.split(',')]
-
+                
+            print decl
+            
+            if vartype == 'string':
+                varvalue = [varvalue[1:-1]] # strip quotes, wrap in list
+            else:
+                g = re.match(r"[\{\s]*([0-9\.\ f\,]*).*", varvalue).groups()[0]
+                varvalue  = [valtype(comp) for comp in g.split(',')]
             
             if template:
                 existing_template = tempGroup.find(varname)
@@ -127,7 +141,7 @@ def literalsToParms(nodes):
                 if template == existing_template:
                     tempGroup.replace(varname, template)
                 
-                vex_lines[linenum] = "%s %s = ch(\"%s\");" % (vartype, varname, varname)
+                vex_lines[linenum] = "%s %s = %s(\"%s\");" % (vartype, varname, function, varname)
 
         node.setParmTemplateGroup(tempGroup)
         new_code = "\n".join(vex_lines)
@@ -140,7 +154,7 @@ def _findDeclarations(vex_code_lines):
     # find simple assignments
     for i, line in enumerate(vex_code_lines):
         # match word word = number or {number, number, ...}
-        m = re.match(r"([@\w]+) ([@\w]+) *\= *((?:{.*}|[0-9\.]*))", line)
+        m = re.match(r"([@\w]+) ([@\w]+) *\= *((?:{.*}|\".*\"|[0-9\.]*))", line)
         
         if not m: continue
         
